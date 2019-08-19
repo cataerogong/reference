@@ -1,0 +1,95 @@
+Python: Enum枚举的实现
+    从C系语言过来用Python，好不容易适应了写代码不打花括号，突然有一天发现它居然木有枚举……于是stackoverflow了一把，发现神人的枚举（enum）实现到处都是，于是汉化总结过来。
+
+如果是新版Python用户（Python 3.4 with PEP 435）：
+
+from enum import Enum
+Animal = Enum('Animal', 'ant bee cat dog')
+ 
+
+or
+
+class Animals(Enum):
+    ant = 1
+    bee = 2
+    cat = 3
+    dog = 4
+ 
+
+旧版Python用户可以充分发挥动态语言的优越性来构造枚举，有简单的：
+
+def enum(**enums):
+    return type('Enum', (), enums)
+ 
+Numbers = enum(ONE=1, TWO=2, THREE='three')
+# Numbers.ONE == 1, Numbers.TWO == 2 and Numbers.THREE == 'three'
+ 
+
+有复杂的：
+
+def enum(*sequential, **named):
+    enums = dict(zip(sequential, range(len(sequential))), **named)
+    return type('Enum', (), enums)
+ 
+Numbers = enum('ZERO', 'ONE', 'TWO')
+# Numbers.ZERO == 0 and Numbers.ONE == 1
+ 
+
+有带值到名称映射的：
+
+def enum(*sequential, **named):
+    enums = dict(zip(sequential, range(len(sequential))), **named)
+    reverse = dict((value, key) for key, value in enums.iteritems())
+    enums['reverse_mapping'] = reverse
+    return type('Enum', (), enums)
+ 
+# Numbers.reverse_mapping['three'] == 'THREE'
+ 
+
+有用set实现的：
+
+class Enum(set):
+    def __getattr__(self, name):
+        if name in self:
+            return name
+        raise AttributeError
+ 
+Animals = Enum(["DOG", "CAT", "HORSE"])
+print Animals.DOG
+ 
+
+有用range实现的：
+
+dog, cat, rabbit = range(3)
+ 
+# or
+ 
+class Stationary:
+    (Pen, Pencil, Eraser) = range(0, 3)
+print Stationary.Pen
+ 
+
+有用tuple实现的：
+
+class Enum(tuple): __getattr__ = tuple.index
+ 
+State = Enum(['Unclaimed', 'Claimed'])
+print State.Claimed
+ 
+
+有用namedtuple实现的：
+
+from collections import namedtuple
+ 
+def enum(*keys):
+    return namedtuple('Enum', keys)(*keys)
+ 
+MyEnum = enum('FOO', 'BAR', 'BAZ')
+ 
+# 带字符数字映射的，像C/C++
+def enum(*keys):
+    return namedtuple('Enum', keys)(*range(len(keys)))
+ 
+# 带字典映射的，可以映射出各种类型，不局限于数字
+def enum(**kwargs):
+    return namedtuple('Enum', kwargs.keys())(*kwargs.values())

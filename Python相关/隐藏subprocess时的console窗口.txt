@@ -1,0 +1,56 @@
+https://blog.csdn.net/ztb3214/article/details/19256849
+
+隐藏subprocess时的console窗口
+2014年02月15日 22:40:17
+阅读数：1971
+我使用PyQt编写了一个工具，代码中使用了第三方命令行的SDK，使用py2exe打包为exe程序后，由于第三方SDK是命令行形式的，所以会循环的出现console窗口，十分不美观，所以在网上一直在找相关的方法，终于找到了解决的方法，
+
+代码如下：
+
+import subprocess,sys
+ 
+IS_WIN32 = 'win32' in str(sys.platform).lower()
+ 
+def subprocess_call(*args, **kwargs):
+    #also works for Popen. It creates a new *hidden* window, so it will work in frozen apps (.exe).
+    if IS_WIN32:
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags = subprocess.CREATE_NEW_CONSOLE | subprocess.STARTF_USESHOWWINDOW
+        startupinfo.wShowWindow = subprocess.SW_HIDE
+        kwargs['startupinfo'] = startupinfo
+    retcode = subprocess.call(*args, **kwargs)
+    return retcode
+
+
+例子用的是subprocess的call方法，大家可以自行替换为Popen即可。
+
+
+
+结合官方文档，我大致解释如下：
+
+sys.platform会输出当前操作系统的信息
+
+subprocess.STARTUPINFO() 官方解释是：此函数是专门为Popen创建的一个结构体，此函数返回一个实例。
+
+为了使startupinfo.wShowWindow = subprocess.SW_HIDE 生效，所以前面使用了startupinfo.dwFlags = subprocess.CREATE_NEW_CONSOLE | subprocess.STARTF_USESHOWWINDOW
+
+官方解释：If dwFlags specifiesSTARTF_USESHOWWINDOW, this attribute can be any of the values that can be specified in thenCmdShow parameter for theShowWindow function, except for SW_SHOWDEFAULT. Otherwise, this attribute is ignored.
+
+大体意思就是说，如果设置了dwFlags的值为STARTF_USESHOWWINDOW ，才可以设置wShowWindow，否则，值将会被忽略了。
+
+kwargs['startupinfo'] = startupinfo 就是设置为新值
+
+最后返回call实例：
+
+retcode = subprocess.call(*args, **kwargs)
+return retcode
+
+调用时，可以直接这样写：
+
+cmlLine = "ffmpeg.exe -i test.mp4"
+
+callInstant = subprocess_call(cmlLine)
+
+...
+
+等等。

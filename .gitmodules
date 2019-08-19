@@ -1,0 +1,3 @@
+[submodule "dnserver___#py#submodule#"]
+	path = "dnserver___#py#submodule#"
+	url = https://github.com/samuelcolvin/dnserver
